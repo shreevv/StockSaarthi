@@ -1,5 +1,5 @@
 # utils/data_handler.py
-
+from utils.ml_model import train_and_predict_svr, generate_recommendation
 import yfinance as yf
 import pandas as pd
 
