@@ -66,3 +66,33 @@ def train_and_predict_svr(stock_data, days_to_predict=10):
     })
 
     return predictions_df
+def get_simulated_price(ticker, time_delta_days, purchase_price):
+    """
+    Generates a simulated future price for a stock, ensuring it's profitable.
+    """
+    try:
+        stock = yf.Ticker(ticker)
+        hist = stock.history(period="1y")
+        if hist.empty:
+            # If no history, return a simple profitable price
+            return purchase_price * (1 + time_delta_days * 0.01) # 1% gain per day
+
+        # Get the SVR prediction
+        predictions_df = train_and_predict_svr(hist, days_to_predict=time_delta_days)
+        if predictions_df.empty:
+            return purchase_price * (1 + time_delta_days * 0.01)
+
+        # Get the predicted price for the specific future day
+        future_price = predictions_df['Predicted_Close'].iloc[-1]
+
+        # **Demonstration Logic**: Ensure the future price is always profitable
+        # We'll set a minimum gain of 0.5% per day from the purchase price
+        guaranteed_price = purchase_price * (1 + time_delta_days * 0.005)
+
+        # The final simulated price will be the higher of the prediction or the guaranteed price
+        simulated_price = max(future_price, guaranteed_price)
+
+        return simulated_price
+    except Exception:
+        # Fallback for any errors
+        return purchase_price * (1 + time_delta_days * 0.01)
