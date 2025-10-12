@@ -1,11 +1,11 @@
-# app.py
-import dash
+from app_instance import app # Import the app instance
 import dash_bootstrap_components as dbc
 from dash import dcc, html, page_container, callback, Input, Output, State
 import pandas as pd
 import yfinance as yf
 from sidebar import sidebar, CONTENT_STYLE
 
+server = app.server # The server object is now tied to the imported app
 app = dash.Dash(__name__, use_pages=True, external_stylesheets=[dbc.themes.DARKLY, dbc.icons.BOOTSTRAP])
 server = app.server
 
