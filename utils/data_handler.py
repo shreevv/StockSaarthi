@@ -136,3 +136,21 @@ def fetch_market_news():
     except Exception as e:
         print(f"Could not fetch market news. Error: {e}")
         return [{"title": "Error fetching market news."}]
+
+def fetch_corporate_actions(ticker):
+    """Fetches and formats corporate actions (dividends and splits) for a ticker."""
+    try:
+        actions_df = yf.Ticker(ticker).actions
+        if actions_df.empty:
+            return None, None
+
+        actions_df = actions_df.reset_index().sort_values(by='Date', ascending=False)
+        actions_df['Date'] = actions_df['Date'].dt.strftime('%Y-%m-%d')
+
+        dividends = actions_df[actions_df['Dividends'] > 0][['Date', 'Dividends']].head()
+        splits = actions_df[actions_df['Stock Splits'] > 0][['Date', 'Stock Splits']].head()
+
+        return dividends, splits
+    except Exception as e:
+        print(f"Could not fetch corporate actions for {ticker}. Error: {e}")
+        return None, None
