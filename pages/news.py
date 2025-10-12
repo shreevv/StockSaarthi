@@ -1,7 +1,8 @@
 # pages/news.py
 
 import dash
-from dash import html, callback, Input, Output
+# --- THIS LINE IS THE FIX ---
+from dash import html, dcc, callback, Input, Output
 import dash_bootstrap_components as dbc
 from utils.data_handler import fetch_market_news
 
@@ -19,12 +20,11 @@ layout = dbc.Container([
 
 @callback(
     Output("news-feed-container", "children"),
-    # Trigger callback once the page is loaded by targeting its own output
     Input("news-feed-container", "id")
 )
 def update_news_feed(_):
     news_articles = fetch_market_news()
-
+    
     if not news_articles or "Error" in news_articles[0]['title']:
         return dbc.Alert("Could not load market news at this time.", color="warning")
 
@@ -39,5 +39,5 @@ def update_news_feed(_):
                 className="mb-3"
             )
             news_cards.append(card)
-
+    
     return news_cards
