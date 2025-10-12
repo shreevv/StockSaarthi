@@ -122,3 +122,17 @@ def fetch_news(ticker):
     except Exception as e:
         print(f"Could not fetch news for {ticker}. Error: {e}")
         return [{"title": "Error fetching news."}]
+
+def fetch_market_news():
+    """Fetches general market news by using a major index ticker."""
+    # Using Nifty 50 as the source for general Indian market news
+    nifty = yf.Ticker("^NSEI")
+    try:
+        # Fetch the first 10 articles
+        news = nifty.news[:10]
+        if not news:
+            return [{"title": "No recent market news found."}]
+        return news
+    except Exception as e:
+        print(f"Could not fetch market news. Error: {e}")
+        return [{"title": "Error fetching market news."}]
