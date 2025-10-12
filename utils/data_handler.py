@@ -92,3 +92,33 @@ def screen_stocks(ticker_list):
             continue
 
     return screened_list
+
+def calculate_technical_indicators(df):
+    """Calculates RSI and MACD for a given DataFrame."""
+    # Calculate RSI
+    delta = df['Close'].diff()
+    gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
+    loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
+    rs = gain / loss
+    df['RSI'] = 100 - (100 / (1 + rs))
+
+    # Calculate MACD
+    exp12 = df['Close'].ewm(span=12, adjust=False).mean()
+    exp26 = df['Close'].ewm(span=26, adjust=False).mean()
+    df['MACD'] = exp12 - exp26
+    df['Signal_Line'] = df['MACD'].ewm(span=9, adjust=False).mean()
+    df['MACD_Hist'] = df['MACD'] - df['Signal_Line']
+
+    return df
+def fetch_news(ticker):
+    """Fetches the latest news articles for a given ticker."""
+    try:
+        stock = yf.Ticker(ticker)
+        # Fetch the first 5 news articles
+        news = stock.news[:5]
+        if not news:
+            return [{"title": "No recent news found for this stock."}]
+        return news
+    except Exception as e:
+        print(f"Could not fetch news for {ticker}. Error: {e}")
+        return [{"title": "Error fetching news."}]
