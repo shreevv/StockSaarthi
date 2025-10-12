@@ -1,16 +1,16 @@
-from app_instance import app # Import the app instance
+from app_instance import app, initial_wallet_balance, initial_wallet_history
 import dash_bootstrap_components as dbc
 from dash import dcc, html, page_container, callback, Input, Output, State
 import pandas as pd
 import yfinance as yf
 from sidebar import sidebar, CONTENT_STYLE
 
-server = app.server # The server object is now tied to the imported app
+server = app.server
 app = dash.Dash(__name__, use_pages=True, external_stylesheets=[dbc.themes.DARKLY, dbc.icons.BOOTSTRAP])
 server = app.server
-
-initial_wallet_balance = 1000000.00
-initial_wallet_history = [{'Date': pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"), 'Description': 'Initial Deposit', 'Amount': f"₹{initial_wallet_balance:,.2f}", 'Balance': f"₹{initial_wallet_balance:,.2f}"}]
+# --- DELETE THESE TWO LINES FROM THIS FILE ---
+# initial_wallet_balance = 1000000.00
+# initial_wallet_history = [{'Date': pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"), 'Description': 'Initial Deposit', 'Amount': f"₹{initial_wallet_balance:,.2f}", 'Balance': f"₹{initial_wallet_balance:,.2f}"}]
 
 footer = html.Div(
     dbc.Card(
