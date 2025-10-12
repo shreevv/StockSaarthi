@@ -128,16 +128,19 @@ def open_transaction_modal(buy, sell):
     [Output("wallet-balance-store", "data"), Output("portfolio-store", "data"), Output("trading-history-store", "data"), Output("wallet-history-store", "data"), Output("transaction-alert-placeholder", "children"), Output("transaction-modal", "is_open", allow_duplicate=True)],
     Input("confirm-transaction-button", "n_clicks"),
     [State("confirm-transaction-button", "custom_data"), State("quantity-input", "value"), State("current-ticker-store", "data"), State("wallet-balance-store", "data"), State("portfolio-store", "data"), State("trading-history-store", "data"), State("wallet-history-store", "data")],
-    prevent_initial_call=True # THIS LINE IS THE FIX
+    prevent_initial_call=True
 )
 def execute_transaction(n, trans_type, qty, ticker, balance, portfolio, trade_hist, wallet_hist):
     if not all([trans_type, qty, ticker]):
-        return (dash.no_update,) * 4 + (dbc.Alert("Invalid details.", color="warning"), False)
+        return (dash.no_update, dash.no_update, dash.no_update, dash.no_update, dbc.Alert("Invalid details.", color="warning"), False)
     try:
         price = yf.Ticker(ticker).history(period='1d')['Close'].iloc[-1]
         value = qty * price
+        msg, color = "", "info"
+
         if trans_type == "BUY":
-            if balance < value: return (dash.no_update,) * 4 + (dbc.Alert("Insufficient funds.", color="danger"), False)
+            if balance < value:
+                return (dash.no_update,) * 4 + (dbc.Alert("Insufficient funds.", color="danger"), False)
             balance -= value
             if ticker in portfolio:
                 new_qty = portfolio[ticker]['quantity'] + qty
@@ -146,8 +149,11 @@ def execute_transaction(n, trans_type, qty, ticker, balance, portfolio, trade_hi
             else:
                 portfolio[ticker] = {'quantity': qty, 'avg_price': price}
             msg, color = f"Successfully purchased {qty} shares of {ticker}.", "success"
+        
         elif trans_type == "SELL":
-            if ticker not in portfolio or portfolio[ticker]['quantity'] < qty: return (dash.no_update,) * 4 + (dbc.Alert("Not enough shares to sell.", color="danger"), False)
+            if ticker not in portfolio or portfolio[ticker]['quantity'] < qty:
+                return (dash.no_update,) * 4 + (dbc.Alert("Not enough shares to sell.", color="danger"), False)
+            
             profit = (price - portfolio[ticker]['avg_price']) * qty
             balance += value
             if profit > 0:
@@ -157,12 +163,23 @@ def execute_transaction(n, trans_type, qty, ticker, balance, portfolio, trade_hi
                 msg = f"Sold {qty} shares of {ticker} for a profit of ₹{profit:,.2f}. A 10% brokerage fee (₹{fee:,.2f}) was applied."
             else:
                 msg = f"Sold {qty} shares of {ticker}."
+            
             portfolio[ticker]['quantity'] -= qty
-            if portfolio[ticker]['quantity'] == 0: del portfolio[ticker]
+            if portfolio[ticker]['quantity'] == 0:
+                del portfolio[ticker]
             color = "success"
+
         trade_hist.append({'Date': pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"), 'Stock': ticker, 'Type': trans_type, 'Quantity': qty, 'Price': f"₹{price:,.2f}", 'Total': f"₹{value:,.2f}"})
         wallet_hist.append({'Date': pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"), 'Description': f"{trans_type} {ticker}", 'Amount': f"-₹{value:,.2f}" if trans_type == "BUY" else f"+₹{value:,.2f}", 'Balance': f"₹{balance:,.2f}"})
-        return (dash.no_update,) * 4 + (dbc.Alert(f"Transaction failed: {e}", color="danger"), False)
+        
+        # This is the correct return for a successful transaction
+        return balance, portfolio, trade_hist, wallet_hist, dbc.Alert(msg, color=color, duration=5000), False
+
+    except Exception as e:
+        # This is the return for a failed transaction
+        print(f"An error occurred during transaction: {e}")
+        return (dash.no_update, dash.no_update, dash.no_update, dash.no_update, 
+                dbc.Alert("Transaction failed. Please try again later.", color="danger"), False)
 
 @callback(
     [Output("watchlist-store", "data"), Output("watchlist-alert-placeholder", "children"), Output("watchlist-button", "children"), Output("watchlist-button", "outline")],
