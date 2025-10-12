@@ -1,3 +1,6 @@
+# app.py
+
+import dash
 from app_instance import app, initial_wallet_balance, initial_wallet_history
 import dash_bootstrap_components as dbc
 from dash import dcc, html, page_container, callback, Input, Output, State
@@ -5,12 +8,8 @@ import pandas as pd
 import yfinance as yf
 from sidebar import sidebar, CONTENT_STYLE
 
+# This line is critical for deployment
 server = app.server
-app = dash.Dash(__name__, use_pages=True, external_stylesheets=[dbc.themes.DARKLY, dbc.icons.BOOTSTRAP])
-server = app.server
-# --- DELETE THESE TWO LINES FROM THIS FILE ---
-# initial_wallet_balance = 1000000.00
-# initial_wallet_history = [{'Date': pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"), 'Description': 'Initial Deposit', 'Amount': f"₹{initial_wallet_balance:,.2f}", 'Balance': f"₹{initial_wallet_balance:,.2f}"}]
 
 footer = html.Div(
     dbc.Card(
@@ -40,25 +39,38 @@ app.layout = html.Div([
     footer
 ])
 
-@callback(Output("watchlist-container", "children"), [Input("watchlist-interval", "n_intervals"), Input("watchlist-store", "data")])
+@callback(
+    Output("watchlist-container", "children"),
+    [Input("watchlist-interval", "n_intervals"), Input("watchlist-store", "data")]
+)
 def update_watchlist_display(n, watchlist):
-    if not watchlist: return dbc.ListGroup([dbc.ListGroupItem("Your watchlist is empty.")])
-    items = []
+    if not watchlist:
+        return dbc.ListGroup([dbc.ListGroupItem("Your watchlist is empty.")])
+    
+    watchlist_items = []
     for ticker in watchlist:
         try:
             data = yf.Ticker(ticker).history(period="2d")
-            price = data['Close'].iloc[-1]
-            change = data['Close'].diff().iloc[-1]
-            pct = (change / data['Close'].iloc[-2]) * 100
-            color = "success" if change >= 0 else "danger"
-            item = dbc.ListGroupItem([
-                dbc.Row([dbc.Col(html.B(ticker), width="auto"), dbc.Col(f"₹{price:,.2f}", className="text-end")]),
-                dbc.Row([dbc.Col(dbc.Badge(f"{change:+.2f} ({pct:+.2f}%)", color=color), width="auto")])
-            ], style={"backgroundColor": "#2a2a3e", "border": "none", "marginBottom": "5px"})
-            items.append(item)
+            if not data.empty:
+                price = data['Close'].iloc[-1]
+                change = data['Close'].diff().iloc[-1]
+                change_pct = (change / data['Close'].iloc[-2]) * 100
+                color = "success" if change >= 0 else "danger"
+
+                item = dbc.ListGroupItem([
+                    dbc.Row([
+                        dbc.Col(html.B(ticker), width="auto"),
+                        dbc.Col(f"₹{price:,.2f}", className="text-end")
+                    ]),
+                    dbc.Row([
+                        dbc.Col(dbc.Badge(f"{change:+.2f} ({change_pct:+.2f}%)", color=color), width="auto")
+                    ])
+                ], style={"backgroundColor": "#2a2a3e", "border": "none", "marginBottom": "5px"})
+                watchlist_items.append(item)
         except Exception:
             continue
-    return dbc.ListGroup(items, flush=True)
+            
+    return dbc.ListGroup(watchlist_items, flush=True)
 
 @callback(
     [Output("wallet-balance-store", "data", allow_duplicate=True),
@@ -78,34 +90,39 @@ def background_engine(n, auto_trades, price_alerts, balance, portfolio, trade_hi
     if not auto_trades and not price_alerts:
         return dash.no_update
 
-    alerts, active_trades, active_alerts = [], auto_trades.copy(), price_alerts.copy()
-    
+    alerts = []
+    active_trades = auto_trades.copy()
+    active_alerts = price_alerts.copy()
+
     # Auto-Trade Logic
     for ticker, params in auto_trades.items():
         try:
             current_price = yf.Ticker(ticker).history(period='1d')['Close'].iloc[-1]
             trade_executed, alert_msg = False, ""
+
             if params['type'] == 'BUY' and current_price <= params['target']:
-                qty, total_cost = 10, 10 * current_price
+                qty_to_buy, total_cost = 10, 10 * current_price
                 if balance >= total_cost:
                     balance -= total_cost
                     if ticker in portfolio:
-                        new_qty = portfolio[ticker]['quantity'] + qty
+                        new_qty = portfolio[ticker]['quantity'] + qty_to_buy
                         new_avg = ((portfolio[ticker]['avg_price'] * portfolio[ticker]['quantity']) + total_cost) / new_qty
                         portfolio[ticker] = {'quantity': new_qty, 'avg_price': new_avg}
                     else:
-                        portfolio[ticker] = {'quantity': qty, 'avg_price': current_price}
-                    trade_hist.append({'Date': pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"), 'Stock': ticker, 'Type': 'AUTO-BUY', 'Quantity': qty, 'Price': f"₹{current_price:,.2f}", 'Total': f"₹{total_cost:,.2f}"})
+                        portfolio[ticker] = {'quantity': qty_to_buy, 'avg_price': current_price}
+                    trade_hist.append({'Date': pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"), 'Stock': ticker, 'Type': 'AUTO-BUY', 'Quantity': qty_to_buy, 'Price': f"₹{current_price:,.2f}", 'Total': f"₹{total_cost:,.2f}"})
                     wallet_hist.append({'Date': pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"), 'Description': f"AUTO-BUY {ticker}", 'Amount': f"-₹{total_cost:,.2f}", 'Balance': f"₹{balance:,.2f}"})
-                    alert_msg, trade_executed = f"Auto-Trade: Bought {qty} shares of {ticker}.", True
+                    alert_msg, trade_executed = f"Auto-Trade Executed: Bought {qty_to_buy} shares of {ticker}.", True
+            
             elif params['type'] == 'SELL' and current_price >= params['target']:
                 if ticker in portfolio and portfolio[ticker]['quantity'] > 0:
-                    qty, total_sale = portfolio[ticker]['quantity'], portfolio[ticker]['quantity'] * current_price
+                    qty_to_sell, total_sale = portfolio[ticker]['quantity'], portfolio[ticker]['quantity'] * current_price
                     balance += total_sale
                     del portfolio[ticker]
-                    trade_hist.append({'Date': pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"), 'Stock': ticker, 'Type': 'AUTO-SELL', 'Quantity': qty, 'Price': f"₹{current_price:,.2f}", 'Total': f"₹{total_sale:,.2f}"})
+                    trade_hist.append({'Date': pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"), 'Stock': ticker, 'Type': 'AUTO-SELL', 'Quantity': qty_to_sell, 'Price': f"₹{current_price:,.2f}", 'Total': f"₹{total_sale:,.2f}"})
                     wallet_hist.append({'Date': pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"), 'Description': f"AUTO-SELL {ticker}", 'Amount': f"+₹{total_sale:,.2f}", 'Balance': f"₹{balance:,.2f}"})
-                    alert_msg, trade_executed = f"Auto-Trade: Sold {qty} shares of {ticker}.", True
+                    alert_msg, trade_executed = f"Auto-Trade Executed: Sold {qty_to_sell} shares of {ticker}.", True
+
             if trade_executed:
                 del active_trades[ticker]
                 alerts.append(dbc.Alert(alert_msg, color="info", dismissable=True, duration=10000))
@@ -118,10 +135,10 @@ def background_engine(n, auto_trades, price_alerts, balance, portfolio, trade_hi
         try:
             current_price = yf.Ticker(ticker).history(period='1d')['Close'].iloc[-1]
             if params.get('upper') and current_price >= params['upper']:
-                alerts.append(dbc.Alert(f"Price Alert: {ticker} crossed upper target of {params['upper']}.", color="warning", duration=15000))
+                alerts.append(dbc.Alert(f"Price Alert: {ticker} has crossed upper target of {params['upper']}.", color="warning", duration=15000))
                 active_alerts[ticker].pop('upper', None)
             if params.get('lower') and current_price <= params['lower']:
-                alerts.append(dbc.Alert(f"Price Alert: {ticker} crossed lower target of {params['lower']}.", color="warning", duration=15000))
+                alerts.append(dbc.Alert(f"Price Alert: {ticker} has crossed lower target of {params['lower']}.", color="warning", duration=15000))
                 active_alerts[ticker].pop('lower', None)
             if not active_alerts.get(ticker):
                 del active_alerts[ticker]
