@@ -1,0 +1,80 @@
+/* assets/style.css */
+@import url('https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap');
+
+body {
+    background-color: #0E1117;
+    color: #FAFAFA;
+    font-family: 'Lato', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: #FAFAFA;
+    font-weight: 700;
+}
+
+hr {
+    border-color: #333 !important;
+}
+
+/* Style for Dash Bootstrap Components like Card */
+.card {
+    background-color: #1E1E2D !important;
+    border: none !important;
+    border-radius: 10px !important;
+}
+
+/* Input box styling */
+.dbc .form-control {
+    background-color: #2a2a3e !important;
+    color: #FAFAFA !important;
+    border: 1px solid #444 !important;
+    border-radius: 8px !important;
+}
+.dbc .form-control:focus {
+    box-shadow: 0 0 0 0.2rem rgba(98, 0, 234, 0.3) !important;
+}
+
+/* Button Styling */
+.btn-primary {
+    background-color: #6200ea !important;
+    border-color: #6200ea !important;
+    border-radius: 20px !important;
+    font-weight: 700 !important;
+    transition: all 0.2s ease-in-out;
+}
+.btn-primary:hover {
+    background-color: #7c4dff !important;
+    border-color: #7c4dff !important;
+    transform: translateY(-2px);
+}
+
+/* --- Metric Card Styling --- */
+.metric-card {
+    padding: 1rem;
+    text-align: center;
+    background-color: #1E1E2D;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.metric-card-label {
+    font-size: 0.9rem;
+    color: #a9a9a9;
+    margin-bottom: 0.5rem;
+}
+
+.metric-card-value {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.positive-change {
+    color: #00ff00;
+}
+
+.negative-change {
+    color: #ff0000;
+}
