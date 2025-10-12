@@ -1,15 +1,14 @@
 # pages/recommendations.py
 
 import dash
-from dash import html, callback, Input, Output
+# --- THIS LINE IS THE FIX ---
+from dash import html, dcc, callback, Input, Output 
 import dash_bootstrap_components as dbc
 import pandas as pd
 from utils.data_handler import screen_stocks
 
 dash.register_page(__name__, name='AI Recommendations')
 
-# --- A predefined list of top stocks to analyze for the demo ---
-# In a real app, this list could be much larger or dynamically generated.
 TOP_STOCKS_LIST = [
     'RELIANCE.NS', 'TCS.NS', 'HDFCBANK.NS', 'INFY.NS', 'ICICIBANK.NS',
     'HINDUNILVR.NS', 'SBIN.NS', 'BAJFINANCE.NS', 'BHARTIARTL.NS', 'KOTAKBANK.NS'
@@ -27,7 +26,7 @@ layout = dbc.Container([
             dbc.Button("Find Top Stocks", id="run-screener-button", color="primary", size="lg", className="mt-2")
         ])
     , className="mb-4"),
-
+    
     dcc.Loading(
         id="loading-screener",
         type="default",
@@ -46,20 +45,17 @@ def run_stock_screener(n_clicks):
     if n_clicks is None:
         return ""
 
-    # Run the screener function
     analysis_results = screen_stocks(TOP_STOCKS_LIST)
-
+    
     if not analysis_results:
         return dbc.Alert("The analysis did not return any results. Please try again later.", color="warning", className="mt-4")
-
-    # Convert to DataFrame and filter for "Buy" recommendations
+        
     df = pd.DataFrame(analysis_results)
     buy_recommendations = df[df['Recommendation'] == 'Buy']
-
+    
     if buy_recommendations.empty:
         return dbc.Alert("AI analysis complete. No strong 'Buy' signals found at this time.", color="info", className="mt-4")
-
-    # Create the results table
+    
     results_table = dbc.Table.from_dataframe(
         buy_recommendations,
         striped=True,
@@ -68,7 +64,7 @@ def run_stock_screener(n_clicks):
         dark=True,
         responsive=True
     )
-
+    
     return html.Div([
         html.H4("Top 'Buy' Recommendations", className="mt-4"),
         results_table
