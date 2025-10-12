@@ -1,8 +1,11 @@
-# sidebar.py
-
-import dash
-from dash import html
+from app_instance import app # Import the app instance
+from dash import html, dcc
 import dash_bootstrap_components as dbc
+
+# ... (the rest of your sidebar.py file remains the same)
+# The line below will now work correctly
+html.Img(src=app.get_asset_url('logo.jpg'), style={'width': '50px', 'margin-right': '10px'}),
+# ...
 
 SIDEBAR_STYLE = {
     "position": "fixed", "top": 0, "left": 0, "bottom": 0,
