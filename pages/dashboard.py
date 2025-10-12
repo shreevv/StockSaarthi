@@ -161,9 +161,7 @@ def execute_transaction(n, trans_type, qty, ticker, balance, portfolio, trade_hi
             if portfolio[ticker]['quantity'] == 0: del portfolio[ticker]
             color = "success"
         trade_hist.append({'Date': pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"), 'Stock': ticker, 'Type': trans_type, 'Quantity': qty, 'Price': f"₹{price:,.2f}", 'Total': f"₹{value:,.2f}"})
-        wallet_hist.append({'Date': pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"), 'Description': f"{trans_type} {ticker}", 'Amount': f"-₹{value:,.2f}" if trans_type == "BUY" else f"+₹{value,.2f}", 'Balance': f"₹{balance:,.2f}"})
-        return balance, portfolio, trade_hist, wallet_hist, dbc.Alert(msg, color=color, duration=5000), False
-    except Exception as e:
+        wallet_hist.append({'Date': pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"), 'Description': f"{trans_type} {ticker}", 'Amount': f"-₹{value:,.2f}" if trans_type == "BUY" else f"+₹{value:,.2f}", 'Balance': f"₹{balance:,.2f}"})
         return (dash.no_update,) * 4 + (dbc.Alert(f"Transaction failed: {e}", color="danger"), False)
 
 @callback(
