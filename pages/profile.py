@@ -2,7 +2,7 @@
 import dash
 from dash import html, callback, Input, Output, State
 import dash_bootstrap_components as dbc
-from app import initial_wallet_balance, initial_wallet_history
+from app_instance import initial_wallet_balance, initial_wallet_history
 
 dash.register_page(__name__, name='Profile')
 
