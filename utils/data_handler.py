@@ -53,3 +53,42 @@ def get_key_metrics(info, stock_data):
     change_color = 'green' if change >= 0 else 'red'
     
     return metrics, change_color
+
+# Note: You'll need to import the ml_model functions at the top of data_handler.py
+# from utils.ml_model import train_and_predict_svr, generate_recommendation
+
+def screen_stocks(ticker_list):
+    """
+    Analyzes a list of stock tickers and returns a summary for each.
+    """
+    screened_list = []
+    for ticker in ticker_list:
+        try:
+            print(f"Screening {ticker}...")
+            stock_data, stock_info = fetch_stock_data(ticker)
+            if stock_data is None:
+                continue
+
+            predictions_df = train_and_predict_svr(stock_data)
+            recommendation = generate_recommendation(stock_data, predictions_df)
+
+            # Add company name and other relevant info to the result
+            recommendation['Ticker'] = ticker
+            recommendation['Company Name'] = stock_info.get('longName', ticker)
+            recommendation['Current Price'] = f"{stock_info.get('currency', '')} {stock_data['Close'].iloc[-1]:,.2f}"
+
+            # Reorder dict for better table display
+            ordered_reco = {
+                'Ticker': recommendation['Ticker'],
+                'Company Name': recommendation['Company Name'],
+                'Recommendation': recommendation['recommendation'],
+                'Current Price': recommendation['Current Price'],
+                '10-Day Target': f"{stock_info.get('currency', '')} {recommendation['target_price']}",
+                'Risk Level': recommendation['risk']
+            }
+            screened_list.append(ordered_reco)
+        except Exception as e:
+            print(f"Could not screen {ticker}. Error: {e}")
+            continue
+
+    return screened_list
