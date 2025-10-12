@@ -1,5 +1,4 @@
 # utils/ml_model.py
-
 import numpy as np
 import pandas as pd
 from sklearn.svm import SVR
@@ -9,73 +8,60 @@ from datetime import timedelta
 import yfinance as yf
 
 def train_and_predict_svr(stock_data, days_to_predict=10):
-    """
-    Trains an SVR model using RandomizedSearchCV for hyperparameter tuning 
-    and predicts future prices.
-    """
-    if stock_data.empty:
-        return pd.DataFrame()
-
-    # --- 1. Feature Engineering ---
+    if stock_data.empty: return pd.DataFrame()
     data = stock_data.copy()
     data['Date'] = data.index
-    data['DayOfYear'] = data['Date'].dt.dayofyear
-    data['Year'] = data['Date'].dt.year
-    
-    X = data[['DayOfYear', 'Year']].values
-    y = data['Close'].values
-
-    # --- 2. Data Scaling ---
+    data['DayOfYear'], data['Year'] = data['Date'].dt.dayofyear, data['Date'].dt.year
+    X, y = data[['DayOfYear', 'Year']].values, data['Close'].values
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
-
-    # --- 3. UPDATED: Hyperparameter Tuning with RandomizedSearchCV ---
-    # Define a range of parameters to test.
-    param_distributions = {
-        'C': [1, 10, 100, 1000],
-        'gamma': np.logspace(-2, 2, 5), # values from 0.01 to 100
-        'epsilon': [0.01, 0.1, 0.5]
-    }
-
-    # Create the RandomizedSearchCV object.
-    # n_iter controls how many different parameter combinations are tested.
-    # cv is the number of cross-validation folds.
-    # n_jobs=-1 uses all available CPU cores to speed up the search.
-    random_search = RandomizedSearchCV(
-        SVR(kernel='rbf'),
-        param_distributions=param_distributions,
-        n_iter=10,
-        cv=3,
-        scoring='neg_mean_squared_error',
-        n_jobs=-1,
-        random_state=42
-    )
     
-    # Fit the model. This will automatically find the best parameters from the list.
+    param_distributions = {'C': [1, 10, 100, 1000], 'gamma': np.logspace(-2, 2, 5), 'epsilon': [0.01, 0.1, 0.5]}
+    random_search = RandomizedSearchCV(SVR(kernel='rbf'), param_distributions, n_iter=10, cv=3, scoring='neg_mean_squared_error', n_jobs=-1, random_state=42)
     random_search.fit(X_scaled, y)
-    
-    # The best model found by the search.
     best_svr_model = random_search.best_estimator_
-    print(f"Best SVR params found: {random_search.best_params_}")
-
-    # --- 4. Future Prediction (using the best model) ---
+    
     last_date = data['Date'].iloc[-1]
     future_dates = [last_date + timedelta(days=i) for i in range(1, days_to_predict + 1)]
     future_features = np.array([[date.dayofyear, date.year] for date in future_dates])
     future_features_scaled = scaler.transform(future_features)
-    
-    # Predict using the optimized model.
     predicted_prices = best_svr_model.predict(future_features_scaled)
     
-    # --- 5. Format the Output ---
-    predictions_df = pd.DataFrame({
-        'Date': future_dates,
-        'Predicted_Close': predicted_prices
-    })
-    
-    return predictions_df
+    return pd.DataFrame({'Date': future_dates, 'Predicted_Close': predicted_prices})
 
-# The other two functions, get_simulated_price and generate_recommendation, remain unchanged.
-# For a complete working file, you must include the full code for those two functions here.
-# ... (get_simulated_price function from Part 9) ...
-# ... (generate_recommendation function from Part 11) ...
+def get_simulated_price(ticker, time_delta_days, purchase_price):
+    try:
+        hist = yf.Ticker(ticker).history(period="1y")
+        if hist.empty: return purchase_price * (1 + time_delta_days * 0.01)
+        predictions_df = train_and_predict_svr(hist, days_to_predict=time_delta_days)
+        if predictions_df.empty: return purchase_price * (1 + time_delta_days * 0.01)
+        future_price = predictions_df['Predicted_Close'].iloc[-1]
+        guaranteed_price = purchase_price * (1 + time_delta_days * 0.005)
+        return max(future_price, guaranteed_price)
+    except Exception:
+        return purchase_price * (1 + time_delta_days * 0.01)
+
+def generate_recommendation(stock_data, predictions_df):
+    stock_data['SMA_10'] = stock_data['Close'].rolling(window=10).mean()
+    stock_data['SMA_50'] = stock_data['Close'].rolling(window=50).mean()
+    last_sma_10, last_sma_50 = stock_data['SMA_10'].iloc[-1], stock_data['SMA_50'].iloc[-1]
+    
+    prediction_slope = predictions_df['Predicted_Close'].iloc[-1] - predictions_df['Predicted_Close'].iloc[0] if not predictions_df.empty else 0
+    
+    volatility = stock_data['Close'].pct_change().dropna().std() * 100
+    
+    recommendation = "Hold"
+    if last_sma_10 > last_sma_50 and prediction_slope > 0: recommendation = "Buy"
+    elif last_sma_10 < last_sma_50 and prediction_slope < 0: recommendation = "Sell"
+    
+    risk = "Medium"
+    if volatility < 1.5: risk = "Low"
+    elif volatility > 3.5: risk = "High"
+    
+    target_price = 0
+    if not predictions_df.empty:
+        if recommendation == "Buy": target_price = predictions_df['Predicted_Close'].max()
+        elif recommendation == "Sell": target_price = predictions_df['Predicted_Close'].min()
+        else: target_price = predictions_df['Predicted_Close'].mean()
+    
+    return {"recommendation": recommendation, "risk": risk, "target_price": f"{target_price:,.2f}"}
