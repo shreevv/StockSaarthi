@@ -6,11 +6,11 @@ import pandas as pd
 import yfinance as yf
 from sidebar import sidebar, CONTENT_STYLE
 
-app = dash.Dash(__name__, use_pages=True, external_stylesheets=[dbc.themes.DARKLY])
+app = dash.Dash(__name__, use_pages=True, external_stylesheets=[dbc.themes.DARKLY, dbc.icons.BOOTSTRAP])
 server = app.server
 
 initial_wallet_balance = 1000000.00
-initial_wallet_history = [{'Date': pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"), 'Description': 'Initial Deposit', 'Amount': f"+₹{initial_wallet_balance:,.2f}", 'Balance': f"₹{initial_wallet_balance:,.2f}"}]
+initial_wallet_history = [{'Date': pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"), 'Description': 'Initial Deposit', 'Amount': f"₹{initial_wallet_balance:,.2f}", 'Balance': f"₹{initial_wallet_balance:,.2f}"}]
 
 footer = html.Div(
     dbc.Card(
@@ -32,10 +32,8 @@ app.layout = html.Div([
     dcc.Store(id='watchlist-store', data=[]),
     dcc.Store(id='autotrade-store', data={}),
     dcc.Store(id='price-alert-store', data={}),
-
     dcc.Interval(id='watchlist-interval', interval=15*1000, n_intervals=0),
     dcc.Interval(id='autotrade-interval', interval=30*1000, n_intervals=0),
-
     dcc.Location(id='url'),
     sidebar,
     html.Div(page_container, style={**CONTENT_STYLE, "paddingBottom": "8rem"}),
@@ -49,9 +47,17 @@ def update_watchlist_display(n, watchlist):
     for ticker in watchlist:
         try:
             data = yf.Ticker(ticker).history(period="2d")
-            price, change, pct = data['Close'].iloc[-1], data['Close'].diff().iloc[-1], (data['Close'].diff().iloc[-1] / data['Close'].iloc[-2]) * 100
-            items.append(dbc.ListGroupItem([dbc.Row([dbc.Col(html.B(ticker)), dbc.Col(f"₹{price:,.2f}", className="text-end")]), dbc.Row([dbc.Col(dbc.Badge(f"{change:+.2f} ({pct:+.2f}%)", color="success" if change >= 0 else "danger"))])]))
-        except: continue
+            price = data['Close'].iloc[-1]
+            change = data['Close'].diff().iloc[-1]
+            pct = (change / data['Close'].iloc[-2]) * 100
+            color = "success" if change >= 0 else "danger"
+            item = dbc.ListGroupItem([
+                dbc.Row([dbc.Col(html.B(ticker), width="auto"), dbc.Col(f"₹{price:,.2f}", className="text-end")]),
+                dbc.Row([dbc.Col(dbc.Badge(f"{change:+.2f} ({pct:+.2f}%)", color=color), width="auto")])
+            ], style={"backgroundColor": "#2a2a3e", "border": "none", "marginBottom": "5px"})
+            items.append(item)
+        except Exception:
+            continue
     return dbc.ListGroup(items, flush=True)
 
 @callback(
@@ -69,11 +75,60 @@ def update_watchlist_display(n, watchlist):
     prevent_initial_call=True
 )
 def background_engine(n, auto_trades, price_alerts, balance, portfolio, trade_hist, wallet_hist):
-    if not auto_trades and not price_alerts: return dash.no_update
+    if not auto_trades and not price_alerts:
+        return dash.no_update
+
     alerts, active_trades, active_alerts = [], auto_trades.copy(), price_alerts.copy()
     
-    # (Auto-trade logic from Part 15 and Price Alert logic from Part 17 goes here)
+    # Auto-Trade Logic
+    for ticker, params in auto_trades.items():
+        try:
+            current_price = yf.Ticker(ticker).history(period='1d')['Close'].iloc[-1]
+            trade_executed, alert_msg = False, ""
+            if params['type'] == 'BUY' and current_price <= params['target']:
+                qty, total_cost = 10, 10 * current_price
+                if balance >= total_cost:
+                    balance -= total_cost
+                    if ticker in portfolio:
+                        new_qty = portfolio[ticker]['quantity'] + qty
+                        new_avg = ((portfolio[ticker]['avg_price'] * portfolio[ticker]['quantity']) + total_cost) / new_qty
+                        portfolio[ticker] = {'quantity': new_qty, 'avg_price': new_avg}
+                    else:
+                        portfolio[ticker] = {'quantity': qty, 'avg_price': current_price}
+                    trade_hist.append({'Date': pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"), 'Stock': ticker, 'Type': 'AUTO-BUY', 'Quantity': qty, 'Price': f"₹{current_price:,.2f}", 'Total': f"₹{total_cost:,.2f}"})
+                    wallet_hist.append({'Date': pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"), 'Description': f"AUTO-BUY {ticker}", 'Amount': f"-₹{total_cost:,.2f}", 'Balance': f"₹{balance:,.2f}"})
+                    alert_msg, trade_executed = f"Auto-Trade: Bought {qty} shares of {ticker}.", True
+            elif params['type'] == 'SELL' and current_price >= params['target']:
+                if ticker in portfolio and portfolio[ticker]['quantity'] > 0:
+                    qty, total_sale = portfolio[ticker]['quantity'], portfolio[ticker]['quantity'] * current_price
+                    balance += total_sale
+                    del portfolio[ticker]
+                    trade_hist.append({'Date': pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"), 'Stock': ticker, 'Type': 'AUTO-SELL', 'Quantity': qty, 'Price': f"₹{current_price:,.2f}", 'Total': f"₹{total_sale:,.2f}"})
+                    wallet_hist.append({'Date': pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"), 'Description': f"AUTO-SELL {ticker}", 'Amount': f"+₹{total_sale:,.2f}", 'Balance': f"₹{balance:,.2f}"})
+                    alert_msg, trade_executed = f"Auto-Trade: Sold {qty} shares of {ticker}.", True
+            if trade_executed:
+                del active_trades[ticker]
+                alerts.append(dbc.Alert(alert_msg, color="info", dismissable=True, duration=10000))
+        except Exception as e:
+            print(f"Auto-trade for {ticker} failed: {e}")
+            continue
 
+    # Price Alert Logic
+    for ticker, params in price_alerts.items():
+        try:
+            current_price = yf.Ticker(ticker).history(period='1d')['Close'].iloc[-1]
+            if params.get('upper') and current_price >= params['upper']:
+                alerts.append(dbc.Alert(f"Price Alert: {ticker} crossed upper target of {params['upper']}.", color="warning", duration=15000))
+                active_alerts[ticker].pop('upper', None)
+            if params.get('lower') and current_price <= params['lower']:
+                alerts.append(dbc.Alert(f"Price Alert: {ticker} crossed lower target of {params['lower']}.", color="warning", duration=15000))
+                active_alerts[ticker].pop('lower', None)
+            if not active_alerts.get(ticker):
+                del active_alerts[ticker]
+        except Exception as e:
+            print(f"Price alert check for {ticker} failed: {e}")
+            continue
+    
     if len(alerts) > 0:
         return balance, portfolio, trade_hist, wallet_hist, active_trades, active_alerts, alerts
     else:
