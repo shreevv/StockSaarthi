@@ -96,3 +96,57 @@ def get_simulated_price(ticker, time_delta_days, purchase_price):
     except Exception:
         # Fallback for any errors
         return purchase_price * (1 + time_delta_days * 0.01)
+
+def generate_recommendation(stock_data, predictions_df):
+    """
+    Generates a trading recommendation based on historical trends and SVR predictions.
+    """
+    # --- 1. Trend Analysis (Moving Averages) ---
+    # A "golden cross" (short-term avg > long-term avg) is a bullish signal.
+    # A "death cross" (short-term avg < long-term avg) is a bearish signal.
+    stock_data['SMA_10'] = stock_data['Close'].rolling(window=10).mean()
+    stock_data['SMA_50'] = stock_data['Close'].rolling(window=50).mean()
+    last_sma_10 = stock_data['SMA_10'].iloc[-1]
+    last_sma_50 = stock_data['SMA_50'].iloc[-1]
+
+    # --- 2. Prediction Slope Analysis ---
+    # Is the SVR model predicting an upward or downward trend?
+    if not predictions_df.empty:
+        prediction_slope = predictions_df['Predicted_Close'].iloc[-1] - predictions_df['Predicted_Close'].iloc[0]
+    else:
+        prediction_slope = 0
+
+    # --- 3. Volatility Analysis (for Risk) ---
+    # We calculate the standard deviation of daily returns as a proxy for risk.
+    daily_returns = stock_data['Close'].pct_change().dropna()
+    volatility = daily_returns.std() * 100 # In percentage terms
+
+    # --- 4. Recommendation Logic ---
+    recommendation = "Hold"
+    if last_sma_10 > last_sma_50 and prediction_slope > 0:
+        recommendation = "Buy"
+    elif last_sma_10 < last_sma_50 and prediction_slope < 0:
+        recommendation = "Sell"
+
+    # --- 5. Risk Logic ---
+    risk = "Medium"
+    if volatility < 1.5:
+        risk = "Low"
+    elif volatility > 3.5:
+        risk = "High"
+
+    # --- 6. Target Price Logic ---
+    target_price = 0
+    if not predictions_df.empty:
+        if recommendation == "Buy":
+            target_price = predictions_df['Predicted_Close'].max()
+        elif recommendation == "Sell":
+            target_price = predictions_df['Predicted_Close'].min()
+        else:
+            target_price = predictions_df['Predicted_Close'].mean()
+
+    return {
+        "recommendation": recommendation,
+        "risk": risk,
+        "target_price": f"{target_price:,.2f}"
+    }
