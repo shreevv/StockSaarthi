@@ -1,102 +1,113 @@
 # pages/dashboard.py
-# (All imports remain the same as Part 13)
+# (All imports remain the same as previous parts)
 import dash
 from dash import dcc, html, callback, Input, Output, State, ctx
 import dash_bootstrap_components as dbc
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 import yfinance as yf
-from utils.data_handler import fetch_stock_data, get_key_metrics, calculate_technical_indicators, fetch_news
-from utils.ml_model import train_and_predict_svr, generate_recommendation
-import pandas as pd
+# ... other imports
 
 dash.register_page(__name__, path='/', name='Dashboard')
 
-# The main layout and helper functions are unchanged from Part 13
-# ...
-# --- NOTE: The full layout is omitted for brevity. You must include your full layout from Part 13.
-# The key change is inside the 'update_dashboard' callback's return value.
+# --- UPDATED: Layout with new button and modal ---
+layout = dbc.Container([
+    dcc.Store(id='current-ticker-store', data=None),
+    html.H2("AI Stock Analysis Dashboard", className="mb-4 text-center"),
+    # ... (Search bar row) ...
+    html.Div(id="transaction-alert-placeholder"),
+    html.Div(id="watchlist-alert-placeholder"),
+    dbc.Row([dbc.Col(dcc.Loading(children=html.Div(id="dashboard-content")), width=12)]),
+    # Transaction Modal (unchanged)
+    # ...
+    # --- NEW: Price Alert Modal ---
+    dbc.Modal([
+        dbc.ModalHeader(dbc.ModalTitle("Set Price Alert")),
+        dbc.ModalBody([
+            dbc.Row([
+                dbc.Col(html.P("Upper Target (> Current):"), width=6),
+                dbc.Col(dbc.Input(id="upper-alert-input", type="number", min=0), width=6),
+            ], className="mb-3"),
+            dbc.Row([
+                dbc.Col(html.P("Lower Target (< Current):"), width=6),
+                dbc.Col(dbc.Input(id="lower-alert-input", type="number", min=0), width=6),
+            ]),
+        ]),
+        dbc.ModalFooter(dbc.Button("Set Alert", id="confirm-alert-button", color="primary")),
+    ], id="alert-modal", is_open=False),
+], fluid=True, className="mt-4")
 
-# The main dashboard update callback
+
+# --- UPDATED: Main dashboard callback to add the new button ---
 @callback(
-    # Outputs are the same
-    [Output("dashboard-content", "children"), Output("current-ticker-store", "data")],
-    Input("analyze-button", "n_clicks"),
-    State("stock-ticker-input", "value"),
-    prevent_initial_call=True
+    # ... (Outputs are the same)
 )
 def update_dashboard(n_clicks, ticker):
-    if not ticker: return html.Div("Please enter a stock ticker."), dash.no_update
-    # (Data fetching and figure creation logic is the same as Part 13)
-    stock_data, stock_info = fetch_stock_data(ticker.upper())
-    if stock_data is None: return dbc.Alert(f"Could not retrieve data for '{ticker.upper()}'.", color="danger"), dash.no_update
-    stock_data = calculate_technical_indicators(stock_data)
-    news_articles = fetch_news(ticker.upper())
-    metrics, change_color = get_key_metrics(stock_info, stock_data)
-    predictions_df = train_and_predict_svr(stock_data, days_to_predict=10)
-    reco = generate_recommendation(stock_data, predictions_df)
-    reco_color = {"Buy": "success", "Sell": "danger", "Hold": "secondary"}
+    # ... (Data fetching and figure creation is the same as Part 13)
+    # --- NOTE: For your actual file, you must include the full logic for building the content_layout from Part 13 here. ---
 
-    # --- NEW: Create the Auto-Trade Switch and its data ---
-    autotrade_switch = dbc.Switch(
-        id="autotrade-switch",
-        label="Enable Automated Trading",
-        value=False, # We need a callback to set this based on the store
-        # Store recommendation data needed for the autotrade callback
-        custom_data={'type': reco['recommendation'], 'target': float(reco['target_price'].replace(',', ''))}
-    )
+    # --- UPDATED: Header buttons with Price Alert button ---
+    header_buttons = dbc.Row([
+        dbc.Col(dbc.Button("Buy", id="buy-button", color="success", className="w-100")),
+        dbc.Col(dbc.Button("Sell", id="sell-button", color="danger", className="w-100")),
+        dbc.Col(dbc.Button("Add to Watchlist", id="watchlist-button", color="info", outline=True, className="w-100")),
+        dbc.Col(dbc.Button("Set Price Alert", id="alert-button", color="warning", outline=True, className="w-100")), # NEW
+    ], className="mt-3", justify="center")
 
-    # --- UPDATED: AI Recommendation Card with Auto-Trade Switch ---
-    recommendation_card = dbc.Card(
-        dbc.CardBody([
-            dbc.Row([
-                dbc.Col(html.H4("AI Recommendation"), width=12, className="text-center mb-3"),
-                dbc.Col(dbc.Button(reco['recommendation'], color=reco_color.get(reco['recommendation']), className="w-100 fw-bold"), md=4),
-                dbc.Col(create_metric_card("Risk Level", reco['risk']), md=4),
-                dbc.Col(create_metric_card(f"10-Day Target", f"{stock_info.get('currency', '')} {reco['target_price']}"), md=4)
-            ]),
-            # Add switch only for Buy/Sell recommendations
-            html.Div(autotrade_switch, className="mt-3") if reco['recommendation'] in ["Buy", "Sell"] else ""
-        ]), className="mb-4"
-    )
-
-    # --- NOTE: For your actual file, you must include the full logic for building the content_layout from Part 13 here.
-    # This is a placeholder showing where the new recommendation card goes.
-    full_content_layout = html.Div(["...Header, Buttons...", recommendation_card, "...Tabs with Charts and News..."])
+    # ... (Rest of the layout assembly)
+    full_content_layout = html.Div(["...Your full dashboard layout from Part 13...", header_buttons, "...Rest of the layout..."])
     return full_content_layout, ticker.upper()
 
-# --- NEW: Callback to update the auto-trade store when the switch is toggled ---
+# --- NEW: Callback to open the price alert modal ---
 @callback(
-    [Output("autotrade-store", "data"),
-     Output("autotrade-switch", "value")],
-    Input("autotrade-switch", "value"),
+    [Output("alert-modal", "is_open"),
+     Output("upper-alert-input", "value"),
+     Output("lower-alert-input", "value")],
+    Input("alert-button", "n_clicks"),
     [State("current-ticker-store", "data"),
-     State("autotrade-switch", "custom_data"),
-     State("autotrade-store", "data")]
+     State("price-alert-store", "data")],
+    prevent_initial_call=True,
 )
-def update_autotrade_jobs(switch_on, ticker, reco_data, auto_trades):
-    if ticker is None or reco_data is None:
-        return dash.no_update
+def open_alert_modal(n, ticker, alerts):
+    if not ticker: return False, None, None
+    existing_alerts = alerts.get(ticker, {})
+    upper = existing_alerts.get('upper')
+    lower = existing_alerts.get('lower')
+    return True, upper, lower
 
-    auto_trades = auto_trades or {}
+# --- NEW: Callback to set the price alert ---
+@callback(
+    [Output("price-alert-store", "data"),
+     Output("alert-modal", "is_open", allow_duplicate=True),
+     Output("transaction-alert-placeholder", "children", allow_duplicate=True)],
+    Input("confirm-alert-button", "n_clicks"),
+    [State("upper-alert-input", "value"),
+     State("lower-alert-input", "value"),
+     State("current-ticker-store", "data"),
+     State("price-alert-store", "data")],
+    prevent_initial_call=True
+)
+def set_price_alert(n, upper, lower, ticker, alerts):
+    if not ticker: return dash.no_update
 
-    # This logic syncs the switch state with the store on page load
-    if not ctx.triggered_id == "autotrade-switch":
-         if ticker in auto_trades:
-             return dash.no_update, True
-         else:
-             return dash.no_update, False
-
-    # This logic runs when the user clicks the switch
-    if switch_on:
-        auto_trades[ticker] = reco_data
+    alerts = alerts or {}
+    if upper is None and lower is None:
+        # If both fields are empty, remove any existing alert for the ticker
+        if ticker in alerts:
+            del alerts[ticker]
+            alert_msg = f"Alerts for {ticker} cleared."
+        else: # Nothing to do, no update
+            return dash.no_update, False, dash.no_update
     else:
-        if ticker in auto_trades:
-            del auto_trades[ticker]
+        alerts[ticker] = {}
+        if upper is not None:
+            alerts[ticker]['upper'] = upper
+        if lower is not None:
+            alerts[ticker]['lower'] = lower
+        alert_msg = f"Price alerts for {ticker} set/updated."
 
-    return auto_trades, switch_on
+    final_alert = dbc.Alert(alert_msg, color="info", duration=4000)
+    return alerts, False, final_alert
 
-# --- NOTE: The transaction callbacks and watchlist callbacks remain unchanged from previous parts. You must include their full code here. ---
+# --- NOTE: All other callbacks for transactions and watchlist remain unchanged. You must include their full code here. ---
 # ... (open_transaction_modal callback) ...
 # ... (execute_transaction callback) ...
 # ... (update_watchlist callback) ...
