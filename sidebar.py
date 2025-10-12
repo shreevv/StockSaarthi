@@ -1,16 +1,14 @@
-from app_instance import app # Import the app instance
-from dash import html, dcc
-import dash_bootstrap_components as dbc
+# sidebar.py
 
-# ... (the rest of your sidebar.py file remains the same)
-# The line below will now work correctly
-html.Img(src=app.get_asset_url('logo.jpg'), style={'width': '50px', 'margin-right': '10px'}),
-# ...
+# --- FIX 1: Import the shared app instance and dcc ---
+from app_instance import app
+from dash import html, dcc 
+import dash_bootstrap_components as dbc
 
 SIDEBAR_STYLE = {
     "position": "fixed", "top": 0, "left": 0, "bottom": 0,
     "width": "16rem", "padding": "2rem 1rem", "background-color": "#1a1a2e",
-    "color": "#ffffff", "overflowY": "auto" # Added for scrolling if watchlist gets long
+    "color": "#ffffff", "overflowY": "auto"
 }
 
 CONTENT_STYLE = {
@@ -21,7 +19,8 @@ sidebar = html.Div(
     [
         html.Div(
             [
-                html.Img(src=dash.get_asset_url('logo.jpg'), style={'width': '50px', 'margin-right': '10px'}),
+                # --- FIX 2: Change dash.get_asset_url to app.get_asset_url ---
+                html.Img(src=app.get_asset_url('logo.jpg'), style={'width': '50px', 'margin-right': '10px'}),
                 html.H2("Stocker AI", style={'display': 'inline-block', 'vertical-align': 'middle'}),
             ],
             className="sidebar-header",
@@ -39,7 +38,6 @@ sidebar = html.Div(
             pills=True,
         ),
         html.Hr(),
-        # --- NEW: Watchlist Section ---
         html.H5("My Watchlist", className="mt-4"),
         dcc.Loading(
             type="default",
