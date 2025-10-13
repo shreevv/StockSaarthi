@@ -54,9 +54,6 @@ def get_key_metrics(info, stock_data):
     
     return metrics, change_color
 
-# Note: You'll need to import the ml_model functions at the top of data_handler.py
-# from utils.ml_model import train_and_predict_svr, generate_recommendation
-
 def screen_stocks(ticker_list):
     """
     Analyzes a list of stock tickers and returns a summary for each.
@@ -72,12 +69,10 @@ def screen_stocks(ticker_list):
             predictions_df = train_and_predict_svr(stock_data)
             recommendation = generate_recommendation(stock_data, predictions_df)
 
-            # Add company name and other relevant info to the result
             recommendation['Ticker'] = ticker
             recommendation['Company Name'] = stock_info.get('longName', ticker)
             recommendation['Current Price'] = f"{stock_info.get('currency', '')} {stock_data['Close'].iloc[-1]:,.2f}"
 
-            # Reorder dict for better table display
             ordered_reco = {
                 'Ticker': recommendation['Ticker'],
                 'Company Name': recommendation['Company Name'],
@@ -110,11 +105,11 @@ def calculate_technical_indicators(df):
     df['MACD_Hist'] = df['MACD'] - df['Signal_Line']
 
     return df
+
 def fetch_news(ticker):
     """Fetches the latest news articles for a given ticker."""
     try:
         stock = yf.Ticker(ticker)
-        # Fetch the first 5 news articles
         news = stock.news[:5]
         if not news:
             return [{"title": "No recent news found for this stock."}]
@@ -125,10 +120,8 @@ def fetch_news(ticker):
 
 def fetch_market_news():
     """Fetches general market news by using a major index ticker."""
-    # Using Nifty 50 as the source for general Indian market news
     nifty = yf.Ticker("^NSEI")
     try:
-        # Fetch the first 10 articles
         news = nifty.news[:10]
         if not news:
             return [{"title": "No recent market news found."}]
