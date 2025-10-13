@@ -1,22 +1,142 @@
 /* assets/style.css */
 @import url('https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap');
+/* Google Icons Link */
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
 
+/* Universal Selector */
+* {
+    box-sizing: border-box;
+}
+
+/* Element Selectors */
 body {
     background-color: #0E1117;
     color: #FAFAFA;
-    font-family: 'Lato', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-family: 'Lato', sans-serif; /* Fallback font */
     margin: 0;
     padding: 0;
 }
-h1, h2, h3, h4, h5, h6 { color: #FAFAFA; font-weight: 700; }
-hr { border-color: #333 !important; }
-.card { background-color: #1E1E2D !important; border: none !important; border-radius: 10px !important; }
-.dbc .form-control { background-color: #2a2a3e !important; color: #FAFAFA !important; border: 1px solid #444 !important; border-radius: 8px !important; }
-.dbc .form-control:focus { box-shadow: 0 0 0 0.2rem rgba(98, 0, 234, 0.3) !important; }
-.btn-primary { background-color: #6200ea !important; border-color: #6200ea !important; border-radius: 20px !important; font-weight: 700 !important; transition: all 0.2s ease-in-out; }
-.btn-primary:hover { background-color: #7c4dff !important; border-color: #7c4dff !important; transform: translateY(-2px); }
-.metric-card { padding: 1rem; text-align: center; background-color: #1E1E2D; border-radius: 8px; margin-bottom: 1rem; }
-.metric-card-label { font-size: 0.9rem; color: #a9a9a9; margin-bottom: 0.5rem; }
-.metric-card-value { font-size: 1.2rem; font-weight: 700; color: #ffffff; }
-.positive-change { color: #00ff00; }
-.negative-change { color: #ff0000; }
+
+h1, h2, h3, h4, h5, h6 {
+    color: #FAFAFA;
+    font-weight: 700;
+}
+
+hr {
+    border-color: #333 !important;
+}
+
+/* Class Selectors */
+.card {
+    background-color: #1E1E2D !important;
+    border: 1px solid #444 !important;
+    border-radius: 10px !important;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.metric-card {
+    text-align: center;
+}
+
+/* ID Selector */
+#page-content {
+    margin-left: 18rem;
+    padding: 2rem 1rem;
+}
+
+/* Group Selector */
+.btn-primary, .btn-secondary {
+    border-radius: 20px !important;
+    font-weight: 700 !important;
+    transition: all 0.2s ease-in-out;
+}
+
+/* Descendant Selector */
+.sidebar-header h2 {
+    margin-left: 10px;
+}
+
+/* Background Properties */
+.header {
+    background-color: rgb(30, 30, 45); /* RGB color */
+    background-image: url('assets/header-bg.png');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    padding: 2rem;
+    text-align: center;
+}
+
+/* Text Properties */
+p {
+    line-height: 1.6;
+    text-align: justify;
+    text-decoration: none; /* No underline */
+    text-transform: capitalize;
+}
+
+/* Font Properties */
+.custom-font {
+    font-size: 1.2em;
+    font-weight: bold;
+    font-style: italic;
+    font-family: 'Georgia', serif; /* Fallback font */
+}
+
+/* Box Model */
+.box {
+    padding: 20px;
+    margin: 10px;
+    border: 2px solid #6200ea;
+    border-radius: 5px;
+    width: 50%; /* Relative unit */
+}
+
+/* Display Properties */
+.inline-element {
+    display: inline-block;
+    width: 100px;
+    height: 50px;
+}
+
+/* Position Properties */
+.fixed-footer {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    background-color: rgba(26, 26, 46, 0.9); /* Alpha channel */
+    padding: 1rem;
+    text-align: center;
+}
+
+/* Flexbox */
+.flex-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+/* Pseudo-classes */
+.btn-primary:hover {
+    background-color: #7c4dff !important;
+    transform: translateY(-2px);
+}
+
+.btn-primary:active {
+    transform: translateY(1px);
+}
+
+/* Transitions */
+.transition-box {
+    width: 100px;
+    height: 100px;
+    background-color: #6200ea;
+    transition: width 2s ease-in-out 0.5s; /* property, duration, timing-function, delay */
+}
+
+.transition-box:hover {
+    width: 200px;
+}
