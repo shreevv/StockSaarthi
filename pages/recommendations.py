@@ -1,8 +1,7 @@
 # pages/recommendations.py
 
 import dash
-# --- THIS LINE IS THE FIX ---
-from dash import html, dcc, callback, Input, Output 
+from dash import html, dcc, callback, Input, Output
 import dash_bootstrap_components as dbc
 import pandas as pd
 from utils.data_handler import screen_stocks
@@ -14,26 +13,27 @@ TOP_STOCKS_LIST = [
     'HINDUNILVR.NS', 'SBIN.NS', 'BAJFINANCE.NS', 'BHARTIARTL.NS', 'KOTAKBANK.NS'
 ]
 
-layout = dbc.Container([
+layout = html.Main(dbc.Container([
     html.H2("AI Stock Screener", className="mb-4"),
-    dbc.Card(
-        dbc.CardBody([
-            html.P(
-                "Click the button below to run the AI analysis on a predefined list of top stocks. "
-                "The system will evaluate each stock's trend and future price forecast to identify the best 'Buy' opportunities.",
-                className="card-text"
-            ),
-            dbc.Button("Find Top Stocks", id="run-screener-button", color="primary", size="lg", className="mt-2")
-        ])
-    , className="mb-4"),
-    
+    html.Section(
+        dbc.Card(
+            dbc.CardBody([
+                html.P(
+                    "Click the button below to run the AI analysis on a predefined list of top stocks. "
+                    "The system will evaluate each stock's trend and future price forecast to identify the best 'Buy' opportunities.",
+                    className="card-text"
+                ),
+                dbc.Button("Find Top Stocks", id="run-screener-button", color="primary", size="lg", className="mt-2")
+            ]),
+        className="mb-4"),
+    ),
     dcc.Loading(
         id="loading-screener",
         type="default",
-        children=html.Div(id="recommendations-table-container")
+        children=html.Section(id="recommendations-table-container")
     )
 
-], fluid=True, className="mt-4")
+], fluid=True, className="mt-4"))
 
 
 @callback(
