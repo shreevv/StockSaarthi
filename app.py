@@ -6,21 +6,27 @@ import dash_bootstrap_components as dbc
 from dash import dcc, html, page_container, callback, Input, Output, State
 import pandas as pd
 import yfinance as yf
-from sidebar import sidebar, CONTENT_STYLE
+from sidebar import sidebar
+
+# Link to the external stylesheet
+app.css.append_css({"external_url": "/assets/style.css"})
 
 # This line is critical for deployment
 server = app.server
 
-footer = html.Div(
-    dbc.Card(
-        dbc.CardBody([
-            html.H6("Demonstration Time Travel"),
-            dcc.Slider(id='time-slider', min=0, max=10, step=1, marks={i: f'Day {i}' for i in range(11)}, value=0),
-            html.Div(id="autotrade-alert-placeholder", className="mt-2")
-        ]),
-        style={"position": "fixed", "bottom": 0, "left": "16rem", "right": 0, "zIndex": 1000, "backgroundColor": "#1a1a2e"}
+footer = html.Footer(
+    html.Div(
+        dbc.Card(
+            dbc.CardBody([
+                html.H6("Demonstration Time Travel"),
+                dcc.Slider(id='time-slider', min=0, max=10, step=1, marks={i: f'Day {i}' for i in range(11)}, value=0),
+                html.Div(id="autotrade-alert-placeholder", className="mt-2")
+            ]),
+            style={"position": "fixed", "bottom": 0, "left": "16rem", "right": 0, "zIndex": 1000, "backgroundColor": "#1a1a2e"}
+        ),
+        id="footer"
     ),
-    id="footer"
+    className="fixed-footer"
 )
 
 app.layout = html.Div([
@@ -35,7 +41,7 @@ app.layout = html.Div([
     dcc.Interval(id='autotrade-interval', interval=30*1000, n_intervals=0),
     dcc.Location(id='url'),
     sidebar,
-    html.Div(page_container, style={**CONTENT_STYLE, "paddingBottom": "8rem"}),
+    html.Main(page_container, id="page-content"),
     footer
 ])
 
@@ -46,7 +52,7 @@ app.layout = html.Div([
 def update_watchlist_display(n, watchlist):
     if not watchlist:
         return dbc.ListGroup([dbc.ListGroupItem("Your watchlist is empty.")])
-    
+
     watchlist_items = []
     for ticker in watchlist:
         try:
@@ -69,7 +75,7 @@ def update_watchlist_display(n, watchlist):
                 watchlist_items.append(item)
         except Exception:
             continue
-            
+
     return dbc.ListGroup(watchlist_items, flush=True)
 
 @callback(
@@ -113,7 +119,7 @@ def background_engine(n, auto_trades, price_alerts, balance, portfolio, trade_hi
                     trade_hist.append({'Date': pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"), 'Stock': ticker, 'Type': 'AUTO-BUY', 'Quantity': qty_to_buy, 'Price': f"₹{current_price:,.2f}", 'Total': f"₹{total_cost:,.2f}"})
                     wallet_hist.append({'Date': pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"), 'Description': f"AUTO-BUY {ticker}", 'Amount': f"-₹{total_cost:,.2f}", 'Balance': f"₹{balance:,.2f}"})
                     alert_msg, trade_executed = f"Auto-Trade Executed: Bought {qty_to_buy} shares of {ticker}.", True
-            
+
             elif params['type'] == 'SELL' and current_price >= params['target']:
                 if ticker in portfolio and portfolio[ticker]['quantity'] > 0:
                     qty_to_sell, total_sale = portfolio[ticker]['quantity'], portfolio[ticker]['quantity'] * current_price
@@ -145,7 +151,7 @@ def background_engine(n, auto_trades, price_alerts, balance, portfolio, trade_hi
         except Exception as e:
             print(f"Price alert check for {ticker} failed: {e}")
             continue
-    
+
     if len(alerts) > 0:
         return balance, portfolio, trade_hist, wallet_hist, active_trades, active_alerts, alerts
     else:
