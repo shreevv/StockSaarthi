@@ -9,21 +9,42 @@ from utils.ml_model import get_simulated_price
 
 dash.register_page(__name__, name='Portfolio & Wallet')
 
-layout = dbc.Container([
+layout = html.Main(dbc.Container([
     dcc.Interval(id='interval-component', interval=10*1000, n_intervals=0),
     html.H2("My Portfolio & Wallet", className="mb-4"),
-    dbc.Row([
-        dbc.Col(dbc.Card(dbc.CardBody([html.H5("Current Wallet Balance"), html.H3(id="wallet-balance-display")])), md=6),
-        dbc.Col(dbc.Card(dbc.CardBody([html.H5("Portfolio Allocation"), dcc.Loading(dcc.Graph(id="portfolio-pie-chart", config={'displayModeBar': False}))])), md=6),
-    ], className="mb-4"),
-    dbc.Row([dbc.Col([html.H4("Current Holdings"), dcc.Loading(html.Div(id="portfolio-holdings-table"))], width=12)], className="mb-4"),
-    dbc.Row([dbc.Col([html.H4("Histories"), dbc.Tabs([dbc.Tab(label="Trading History", tab_id="trading-history"), dbc.Tab(label="Wallet History", tab_id="wallet-history")], id="history-tabs", active_tab="trading-history"), dcc.Loading(html.Div(id="history-content", className="mt-3"))], width=12)])
-], fluid=True, className="mt-4")
+    html.Section([
+        dbc.Row([
+            dbc.Col(dbc.Card(dbc.CardBody([html.H5("Current Wallet Balance"), html.H3(id="wallet-balance-display")])), md=6),
+            dbc.Col(dbc.Card(dbc.CardBody([html.H5("Portfolio Allocation"), dcc.Loading(dcc.Graph(id="portfolio-pie-chart", config={'displayModeBar': False}))])), md=6),
+        ], className="mb-4"),
+        dbc.Row([
+            dbc.Col([html.H4("Current Holdings"), dcc.Loading(html.Div(id="portfolio-holdings-table"))], width=12)
+        ], className="mb-4"),
+        dbc.Row([
+            dbc.Col([
+                html.H4("Histories"),
+                dbc.Tabs([
+                    dbc.Tab(label="Trading History", tab_id="trading-history"),
+                    dbc.Tab(label="Wallet History", tab_id="wallet-history")
+                ], id="history-tabs", active_tab="trading-history"),
+                dcc.Loading(html.Div(id="history-content", className="mt-3"))
+            ], width=12)
+        ])
+    ])
+], fluid=True, className="mt-4"))
 
 @callback(
-    [Output("wallet-balance-display", "children"), Output("portfolio-holdings-table", "children"), Output("history-content", "children"), Output("portfolio-pie-chart", "figure")],
-    [Input("interval-component", "n_intervals"), Input("history-tabs", "active_tab"), Input("time-slider", "value")],
-    [State("wallet-balance-store", "data"), State("portfolio-store", "data"), State("trading-history-store", "data"), State("wallet-history-store", "data")]
+    [Output("wallet-balance-display", "children"),
+     Output("portfolio-holdings-table", "children"),
+     Output("history-content", "children"),
+     Output("portfolio-pie-chart", "figure")],
+    [Input("interval-component", "n_intervals"),
+     Input("history-tabs", "active_tab"),
+     Input("time-slider", "value")],
+    [State("wallet-balance-store", "data"),
+     State("portfolio-store", "data"),
+     State("trading-history-store", "data"),
+     State("wallet-history-store", "data")]
 )
 def update_portfolio_page(n, active_tab, time_delta, balance, portfolio, trade_hist, wallet_hist):
     wallet_display = f"₹{balance:,.2f}"
