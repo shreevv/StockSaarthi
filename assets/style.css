@@ -1,142 +1,100 @@
 /* assets/style.css */
 @import url('https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap');
-/* Google Icons Link */
 @import url('https://fonts.googleapis.com/icon?family=Material+Icons');
 
-/* Universal Selector */
+/*
+  CSS Variables for consistent theming.
+  This makes it easy to change the color scheme later.
+*/
+:root {
+    --primary-bg: #0E1117;
+    --secondary-bg: #1E1E2D;
+    --primary-text: #FAFAFA;
+    --secondary-text: #a9a9a9;
+    --accent-color: #6200ea;
+    --border-color: #444;
+}
+
 * {
     box-sizing: border-box;
 }
 
-/* Element Selectors */
 body {
-    background-color: #0E1117;
-    color: #FAFAFA;
-    font-family: 'Lato', sans-serif; /* Fallback font */
+    background-color: var(--primary-bg);
+    color: var(--primary-text);
+    font-family: 'Lato', sans-serif;
     margin: 0;
     padding: 0;
+    /* Add padding to the top to prevent content from being hidden by the fixed header */
+    padding-top: 75px;
 }
 
 h1, h2, h3, h4, h5, h6 {
-    color: #FAFAFA;
+    color: var(--primary-text);
     font-weight: 700;
 }
 
 hr {
-    border-color: #333 !important;
+    border-color: var(--border-color) !important;
 }
 
-/* Class Selectors */
+/* Main content area styling */
+#page-content {
+    padding: 2rem 1rem;
+    /* Ensures the footer is pushed down even on pages with little content */
+    min-height: calc(100vh - 75px);
+}
+
+/* Custom Card Styling */
 .card {
-    background-color: #1E1E2D !important;
-    border: 1px solid #444 !important;
+    background-color: var(--secondary-bg) !important;
+    border: 1px solid var(--border-color) !important;
     border-radius: 10px !important;
     padding: 1rem;
     margin-bottom: 1rem;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-.metric-card {
-    text-align: center;
+/* Navbar link styling */
+.nav-link {
+    font-weight: bold;
+    font-size: 1.1em;
+    margin: 0 0.5rem;
 }
 
-/* ID Selector */
-#page-content {
-    margin-left: 18rem;
-    padding: 2rem 1rem;
-}
-
-/* Group Selector */
+/* Button styling */
 .btn-primary, .btn-secondary {
     border-radius: 20px !important;
     font-weight: 700 !important;
     transition: all 0.2s ease-in-out;
 }
 
-/* Descendant Selector */
-.sidebar-header h2 {
-    margin-left: 10px;
-}
-
-/* Background Properties */
-.header {
-    background-color: rgb(30, 30, 45); /* RGB color */
-    background-image: url('assets/header-bg.png');
-    background-size: cover;
-    background-repeat: no-repeat;
-    background-position: center;
-    padding: 2rem;
-    text-align: center;
-}
-
-/* Text Properties */
-p {
-    line-height: 1.6;
-    text-align: justify;
-    text-decoration: none; /* No underline */
-    text-transform: capitalize;
-}
-
-/* Font Properties */
-.custom-font {
-    font-size: 1.2em;
-    font-weight: bold;
-    font-style: italic;
-    font-family: 'Georgia', serif; /* Fallback font */
-}
-
-/* Box Model */
-.box {
-    padding: 20px;
-    margin: 10px;
-    border: 2px solid #6200ea;
-    border-radius: 5px;
-    width: 50%; /* Relative unit */
-}
-
-/* Display Properties */
-.inline-element {
-    display: inline-block;
-    width: 100px;
-    height: 50px;
-}
-
-/* Position Properties */
-.fixed-footer {
-    position: fixed;
-    bottom: 0;
-    width: 100%;
-    background-color: rgba(26, 26, 46, 0.9); /* Alpha channel */
-    padding: 1rem;
-    text-align: center;
-}
-
-/* Flexbox */
-.flex-container {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-around;
-    flex-wrap: wrap;
-    align-items: center;
-}
-
-/* Pseudo-classes */
 .btn-primary:hover {
     background-color: #7c4dff !important;
     transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(124, 77, 255, 0.4);
 }
 
 .btn-primary:active {
     transform: translateY(1px);
 }
 
-/* Transitions */
-.transition-box {
-    width: 100px;
-    height: 100px;
-    background-color: #6200ea;
-    transition: width 2s ease-in-out 0.5s; /* property, duration, timing-function, delay */
+/* Make Bootstrap dropdowns dark-themed */
+.dropdown-menu {
+    background-color: var(--secondary-bg) !important;
+    border: 1px solid var(--border-color) !important;
 }
 
-.transition-box:hover {
-    width: 200px;
+.dropdown-item {
+    color: var(--primary-text) !important;
+}
+
+.dropdown-item:hover {
+    background-color: var(--accent-color) !important;
+    color: var(--primary-text) !important;
+}
+
+/* Custom styling for tables */
+.table {
+    background-color: var(--secondary-bg);
 }
