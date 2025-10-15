@@ -9,7 +9,7 @@ from utils.ml_model import get_simulated_price
 
 dash.register_page(__name__, name='Portfolio & Wallet')
 
-layout = html.Main(dbc.Container([
+layout = dbc.Container([
     dcc.Interval(id='interval-component', interval=10*1000, n_intervals=0),
     html.H2("My Portfolio & Wallet", className="mb-4"),
     html.Section([
@@ -31,7 +31,7 @@ layout = html.Main(dbc.Container([
             ], width=12)
         ])
     ])
-], fluid=True, className="mt-4"))
+], fluid=True, className="mt-4")
 
 @callback(
     [Output("wallet-balance-display", "children"),
