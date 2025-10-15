@@ -1,100 +1,143 @@
 /* assets/style.css */
-@import url('https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap');
-@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 /*
-  CSS Variables for consistent theming.
-  This makes it easy to change the color scheme later.
+  1. Core Design Philosophy: CSS Variables
+  Defines the entire color palette and theme for easy maintenance.
 */
 :root {
-    --primary-bg: #0E1117;
-    --secondary-bg: #1E1E2D;
-    --primary-text: #FAFAFA;
-    --secondary-text: #a9a9a9;
-    --accent-color: #6200ea;
-    --border-color: #444;
+    --primary-action-color: #3498DB;
+    --primary-action-hover: #2980B9;
+    --background-color: #f7f8fa;
+    --card-background: #FFFFFF;
+    --text-primary: #121212;
+    --text-secondary: #333333;
+    --border-color: #e0e0e0;
+    --gain-color: #26C281;
+    --loss-color: #E74C3C;
+    --font-family: 'Inter', sans-serif;
 }
 
-* {
-    box-sizing: border-box;
-}
-
+/*
+  2. General Styling & Typography
+*/
 body {
-    background-color: var(--primary-bg);
-    color: var(--primary-text);
-    font-family: 'Lato', sans-serif;
+    background-color: var(--background-color);
+    font-family: var(--font-family);
+    color: var(--text-secondary);
     margin: 0;
-    padding: 0;
-    /* Add padding to the top to prevent content from being hidden by the fixed header */
-    padding-top: 75px;
+    /* Leave space for the fixed header */
+    padding-top: 70px;
 }
 
 h1, h2, h3, h4, h5, h6 {
-    color: var(--primary-text);
-    font-weight: 700;
+    color: var(--text-primary);
+    font-weight: 600;
 }
 
-hr {
-    border-color: var(--border-color) !important;
+p {
+    line-height: 1.6;
 }
 
-/* Main content area styling */
+/*
+  3. Layout & Main Components
+*/
 #page-content {
-    padding: 2rem 1rem;
-    /* Ensures the footer is pushed down even on pages with little content */
-    min-height: calc(100vh - 75px);
+    min-height: calc(100vh - 140px); /* Full height minus header and footer */
+    padding: 2rem 1.5rem;
 }
 
-/* Custom Card Styling */
 .card {
-    background-color: var(--secondary-bg) !important;
+    background-color: var(--card-background) !important;
     border: 1px solid var(--border-color) !important;
-    border-radius: 10px !important;
-    padding: 1rem;
-    margin-bottom: 1rem;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-/* Navbar link styling */
-.nav-link {
-    font-weight: bold;
-    font-size: 1.1em;
-    margin: 0 0.5rem;
-}
-
-/* Button styling */
-.btn-primary, .btn-secondary {
-    border-radius: 20px !important;
-    font-weight: 700 !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     transition: all 0.2s ease-in-out;
 }
 
-.btn-primary:hover {
-    background-color: #7c4dff !important;
+.card:hover {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(124, 77, 255, 0.4);
 }
 
-.btn-primary:active {
-    transform: translateY(1px);
+/*
+  4. Button Colors and Functionality
+*/
+
+/* Primary Buttons (e.g., Analyze, Buy) */
+.btn-primary {
+    background-color: var(--primary-action-color) !important;
+    border-color: var(--primary-action-color) !important;
+    font-weight: 600 !important;
+    transition: all 0.2s ease !important;
+}
+.btn-primary:hover {
+    background-color: var(--primary-action-hover) !important;
+    border-color: var(--primary-action-hover) !important;
+}
+.btn-primary:disabled {
+    background-color: #a9cce3 !important;
+    border-color: #a9cce3 !important;
 }
 
-/* Make Bootstrap dropdowns dark-themed */
-.dropdown-menu {
-    background-color: var(--secondary-bg) !important;
-    border: 1px solid var(--border-color) !important;
+
+/* Secondary Buttons (e.g., Add to Watchlist) */
+.btn-secondary {
+    background-color: transparent !important;
+    border-color: var(--primary-action-color) !important;
+    color: var(--primary-action-color) !important;
+    font-weight: 600 !important;
+    transition: all 0.2s ease !important;
+}
+.btn-secondary:hover {
+    background-color: rgba(52, 152, 219, 0.1) !important;
+    color: var(--primary-action-color) !important;
 }
 
-.dropdown-item {
-    color: var(--primary-text) !important;
+/* Custom Success/Danger buttons to match theme */
+.btn-success {
+    background-color: var(--gain-color) !important;
+    border-color: var(--gain-color) !important;
+    font-weight: 600 !important;
+}
+.btn-danger {
+    background-color: var(--loss-color) !important;
+    border-color: var(--loss-color) !important;
+    font-weight: 600 !important;
 }
 
-.dropdown-item:hover {
-    background-color: var(--accent-color) !important;
-    color: var(--primary-text) !important;
+
+/*
+  5. Header and Footer Styling
+*/
+.custom-header {
+    background-color: var(--card-background) !important;
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.04);
 }
 
-/* Custom styling for tables */
+.custom-footer {
+    background-color: var(--card-background);
+    border-top: 1px solid var(--border-color);
+    color: var(--text-secondary);
+}
+
+/*
+  6. Specific Component Tweaks
+*/
+.nav-link {
+    color: var(--text-secondary) !important;
+    font-weight: 500;
+}
+.nav-link.active {
+    color: var(--primary-action-color) !important;
+    font-weight: 600;
+}
+
 .table {
-    background-color: var(--secondary-bg);
+    --bs-table-bg: transparent; /* Make table background transparent to show card color */
+    color: var(--text-secondary) !important;
+}
+.table thead th {
+    color: var(--text-primary) !important;
 }
