@@ -17,11 +17,12 @@ dash.register_page(__name__, path='/', name='Dashboard')
 
 def create_metric_card(label, value, class_name=""):
     return html.Div([
-        html.P(label, className="metric-card-label"),
+        html.P(label, className="metric-card-label text-white-50"),
         html.H5(value, className=f"metric-card-value {class_name}")
     ], className="metric-card")
 
-layout = html.Main(dbc.Container([
+# The layout is wrapped in a dbc.Container for proper alignment and padding.
+layout = dbc.Container([
     dcc.Store(id='current-ticker-store', data=None),
     html.H2("AI Stock Analysis Dashboard", className="mb-4 text-center"),
     html.Form([
@@ -33,6 +34,8 @@ layout = html.Main(dbc.Container([
     html.Div(id="transaction-alert-placeholder"),
     html.Div(id="watchlist-alert-placeholder"),
     html.Section([dbc.Col(dcc.Loading(children=html.Div(id="dashboard-content")), width=12)]),
+    
+    # Modals for user interactions
     dbc.Modal([
         dbc.ModalHeader(dbc.ModalTitle(id="modal-title")),
         dbc.ModalBody(dbc.Input(id="quantity-input", type="number", min=1, placeholder="Enter quantity...")),
@@ -46,8 +49,11 @@ layout = html.Main(dbc.Container([
         ]),
         dbc.ModalFooter(dbc.Button("Set Alert", id="confirm-alert-button", color="primary")),
     ], id="alert-modal", is_open=False),
-], fluid=True, className="mt-4"))
+], fluid=True, className="mt-4")
 
+
+# All callbacks remain the same as their logic is independent of the layout changes.
+# ... (all callbacks from the original dashboard.py file) ...
 @callback(
     [Output("dashboard-content", "children"), Output("current-ticker-store", "data")],
     Input("analyze-button", "n_clicks"),
